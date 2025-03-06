@@ -5,18 +5,60 @@ from collections import deque
 
 class SlidingWindowRateLimiter:
     def __init__(self, window_size: int = 10, max_requests: int = 1):
-				pass
+        self.window_size = window_size
+        self.max_requests = max_requests
+        self.user_requests = {}
+
     def _cleanup_window(self, user_id: str, current_time: float) -> None:
-        pass
+        """Видаляє старі запити, що виходять за межі вікна"""
+        if user_id in self.user_requests:
+            queue = self.user_requests[user_id]
+            while queue and queue[0] < current_time - self.window_size:
+                queue.popleft()
+            if not queue:
+                del self.user_requests[user_id]
 
     def can_send_message(self, user_id: str) -> bool:
-        pass
+        """Перевіряє, чи може користувач відправити повідомлення"""
+        current_time = time.time()
+        self._cleanup_window(user_id, current_time)
+
+        if user_id not in self.user_requests:
+            return True
+
+        queue = self.user_requests[user_id]
+
+        if len(queue) >= self.max_requests:
+            return False
+
+        return True
+
 
     def record_message(self, user_id: str) -> bool:
-        pass
+        """Записує запит користувача"""
+        if self.can_send_message(user_id):
+            current_time = time.time()
+
+            if user_id not in self.user_requests:
+                self.user_requests[user_id] = deque()
+
+            self.user_requests[user_id].append(current_time)
+            return True
+
+        return False
 
     def time_until_next_allowed(self, user_id: str) -> float:
-        pass
+        """Повертає через скільки секунд користувач зможе відправити повідомлення"""
+        current_time = time.time()
+        self._cleanup_window(user_id, current_time)
+
+        if user_id not in self.user_requests or not self.user_requests[user_id]:
+            return 0.0
+
+        oldest_request = self.user_requests[user_id][0]
+        time_left = self.window_size - (current_time - oldest_request)
+
+        return max(0.0, time_left)
 
 # Демонстрація роботи
 def test_rate_limiter():
