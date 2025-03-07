@@ -35,7 +35,7 @@ class SlidingWindowRateLimiter:
 
 
     def record_message(self, user_id: str) -> bool:
-        """Записує запит користувача"""
+        """Запис нового повідомлення з оновленням часу"""
         if self.can_send_message(user_id):
             current_time = time.time()
 
@@ -48,7 +48,7 @@ class SlidingWindowRateLimiter:
         return False
 
     def time_until_next_allowed(self, user_id: str) -> float:
-        """Повертає через скільки секунд користувач зможе відправити повідомлення"""
+        """Розрахунок часу до можливості відправлення наступного повідомлення"""
         current_time = time.time()
         self._cleanup_window(user_id, current_time)
 
